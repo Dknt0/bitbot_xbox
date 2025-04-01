@@ -1,0 +1,33 @@
+# Joystick path
+dev_path: /dev/input/js0
+# Rumble
+hid_path: /dev/hidraw5
+# Frequency Hz
+frequency: 500
+
+debug: false
+enable_rumble: true
+
+axis_map:
+  LX: 0
+  LY: 1
+  LT: 5  # Left Trigger
+  RX: 2
+  RY: 3
+  RT: 4  # Right Trigger
+  DPadX: 6
+  DPadY: 7
+
+button_map:
+  A: 0
+  B: 1
+  X: 3
+  Y: 4
+  LB: 6  # Left Bumper
+  RB: 7  # Right Bumper
+  Disarm: 10
+  Arm: 11
+  Xbox: 12  # Xbox button
+  LS: 13
+  RS: 14
+
