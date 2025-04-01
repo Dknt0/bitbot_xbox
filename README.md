@@ -1,7 +1,7 @@
 Bitbot Joystick Frontend
 ===
 
-Joystick frontend for [bitbot](https://bitbot.lmy.name).
+Xbox Joystick frontend for [bitbot](https://bitbot.lmy.name).
 
 # Requirements
 

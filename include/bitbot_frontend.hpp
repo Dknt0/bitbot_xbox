@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "js_utils.hpp"
 #include "xbox_js.hpp"
 
 namespace xbox_js {
@@ -53,17 +54,12 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          constexpr std::string_view msg_1 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"stop\\\",\\\"value\\\":1}]}\"}";
+          web_socket_.send(ButtonMsg<"stop", "1">().value);
           std::cout << "Emergency Shutdown" << std::endl;
-          web_socket_.send(msg_1.data());
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 70, .right = 70, .strong = 70, .weak = 70},
-         .pulse = {.sustain_10ms = 15, .release_10ms = 0, .loop_count = 0}});
+        RumbleTemplate::emergency_shutdown);
 
-    // Start connectioe
+    // Start connection
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
           if (!is_connected_.load() && state.AxisValue(AxisName::DPadY) > 0.9)
@@ -75,9 +71,7 @@ class JoystickFrontend {
           is_connected_.store(true);
           web_socket_.start();
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 50, .right = 50, .strong = 50, .weak = 50},
-         .pulse = {.sustain_10ms = 10, .release_10ms = 0, .loop_count = 0}});
+        RumbleTemplate::success);
 
     // Start connection
     controller_.RegisterEvent(
@@ -91,9 +85,7 @@ class JoystickFrontend {
           is_connected_.store(false);
           web_socket_.stop();
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 50, .right = 50, .strong = 50, .weak = 50},
-         .pulse = {.sustain_10ms = 10, .release_10ms = 0, .loop_count = 0}});
+        RumbleTemplate::success);
 
     // Power on
     controller_.RegisterEvent(
@@ -104,33 +96,15 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          constexpr std::string_view msg_1 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"power_on\\\",\\\"value\\\":1}]}\"}";
-          constexpr std::string_view msg_2 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"power_on\\\",\\\"value\\\":2}]}\"}";
+          // Power on
+          web_socket_.send(ButtonMsg<"power_on", "1">().value);
+          web_socket_.send(ButtonMsg<"power_on", "2">().value);
           std::cout << "Power on" << std::endl;
-          web_socket_.send(msg_1.data());
-          web_socket_.send(msg_2.data());
           // Record data
-          {
-            constexpr std::string_view msg_1 =
-                "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{"
-                "\\\"name\\\":"
-                "\\\"enable_record\\\",\\\"value\\\":1}]}\"}";
-            constexpr std::string_view msg_2 =
-                "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{"
-                "\\\"name\\\":"
-                "\\\"enable_record\\\",\\\"value\\\":2}]}\"}";
-            std::cout << "Power on" << std::endl;
-            web_socket_.send(msg_1.data());
-            web_socket_.send(msg_2.data());
-          }
+          web_socket_.send(ButtonMsg<"enable_record", "1">().value);
+          web_socket_.send(ButtonMsg<"enable_record", "2">().value);
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 50, .right = 50, .strong = 50, .weak = 50},
-         .pulse = {.sustain_10ms = 10, .release_10ms = 0, .loop_count = 0}});
+        RumbleTemplate::success);
 
     // Start state machine
     controller_.RegisterEvent(
@@ -141,19 +115,11 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          constexpr std::string_view msg_1 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"start\\\",\\\"value\\\":1}]}\"}";
-          constexpr std::string_view msg_2 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"start\\\",\\\"value\\\":2}]}\"}";
-          web_socket_.send(msg_1.data());
-          web_socket_.send(msg_2.data());
+          web_socket_.send(ButtonMsg<"start", "1">().value);
+          web_socket_.send(ButtonMsg<"start", "2">().value);
           std::cout << "Start state machine" << std::endl;
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 50, .right = 50, .strong = 50, .weak = 50},
-         .pulse = {.sustain_10ms = 10, .release_10ms = 0, .loop_count = 0}});
+        RumbleTemplate::success);
 
     // Init pose
     controller_.RegisterEvent(
@@ -164,19 +130,11 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          constexpr std::string_view msg_1 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"init_pose\\\",\\\"value\\\":1}]}\"}";
-          constexpr std::string_view msg_2 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"init_pose\\\",\\\"value\\\":2}]}\"}";
-          web_socket_.send(msg_1.data());
-          web_socket_.send(msg_2.data());
+          web_socket_.send(ButtonMsg<"init_pose", "1">().value);
+          web_socket_.send(ButtonMsg<"init_pose", "2">().value);
           std::cout << "Init pose" << std::endl;
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 50, .right = 50, .strong = 50, .weak = 50},
-         .pulse = {.sustain_10ms = 10, .release_10ms = 0, .loop_count = 0}});
+        RumbleTemplate::success);
 
     // Start inference
     controller_.RegisterEvent(
@@ -187,55 +145,24 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          constexpr std::string_view msg_1 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"policy_run\\\",\\\"value\\\":1}]}\"}";
-          constexpr std::string_view msg_2 =
-              "{\"type\":\"events\",\"data\":\"{\\\"events\\\":[{\\\"name\\\":"
-              "\\\"policy_run\\\",\\\"value\\\":2}]}\"}";
-          web_socket_.send(msg_1.data());
-          web_socket_.send(msg_2.data());
+          web_socket_.send(ButtonMsg<"policy_run", "1">().value);
+          web_socket_.send(ButtonMsg<"policy_run", "2">().value);
           std::cout << "Policy on" << std::endl;
         },
-        {.enable = {.weak = 1, .strong = 1, .right = 1, .left = 1},
-         .strength = {.left = 40, .right = 40, .strong = 40, .weak = 40},
-         .pulse = {.sustain_10ms = 10, .release_10ms = 3, .loop_count = 2}});
+        RumbleTemplate::start_inference);
 
     // Velocity publish
-    controller_.RegisterTiming(0.01, [this](
-                                         const xbox_js::JoystickState& state) {
-      if (is_connected_.load()) {
-        {
-          double vel_x = vel_scale_[0] * state.AxisValue(AxisName::RY);
-          int64_t vel_x_value = *reinterpret_cast<int64_t*>(&vel_x);
-          /*auto res = *reinterpret_cast<double*>(&vel_x_value);*/
-          /*std::cout << res << std::endl;*/
-          std::string msg_x =
-              "{\"data\":\"{\\\"events\\\":[{\\\"name\\\":\\\"set_vel_x\\\","
-              "\\\"value\\\":" +
-              std::to_string(vel_x_value) + "}]}\",\"type\":\"events\"}";
-          web_socket_.send(msg_x.c_str());
-        }
-        {
-          double vel_y = vel_scale_[1] * -state.AxisValue(AxisName::RX);
-          int64_t vel_y_value = *reinterpret_cast<int64_t*>(&vel_y);
-          std::string msg_y =
-              "{\"data\":\"{\\\"events\\\":[{\\\"name\\\":\\\"set_vel_y\\\","
-              "\\\"value\\\":" +
-              std::to_string(vel_y_value) + "}]}\",\"type\":\"events\"}";
-          web_socket_.send(msg_y.c_str());
-        }
-        {
-          double vel_w = vel_scale_[2] * -state.AxisValue(AxisName::LX);
-          int64_t vel_w_value = *reinterpret_cast<int64_t*>(&vel_w);
-          std::string msg_w =
-              "{\"data\":\"{\\\"events\\\":[{\\\"name\\\":\\\"set_vel_w\\\","
-              "\\\"value\\\":" +
-              std::to_string(vel_w_value) + "}]}\",\"type\":\"events\"}";
-          web_socket_.send(msg_w.c_str());
-        }
-      }
-    });
+    controller_.RegisterTiming(
+        0.01, [this](const xbox_js::JoystickState& state) {
+          if (is_connected_.load()) {
+            web_socket_.send(VelocityMsg(
+                "set_vel_x", vel_scale_[0] * state.AxisValue(AxisName::RY)));
+            web_socket_.send(VelocityMsg(
+                "set_vel_y", vel_scale_[1] * -state.AxisValue(AxisName::RX)));
+            web_socket_.send(VelocityMsg(
+                "set_vel_w", vel_scale_[2] * -state.AxisValue(AxisName::LX)));
+          }
+        });
   }
 
   /**

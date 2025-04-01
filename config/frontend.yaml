@@ -1,6 +1,6 @@
-# Joystick path
+# Joystick Device
 dev_path: /dev/input/js0
-# Rumble
+# Rumble HID
 hid_path: /dev/hidraw5
 # Frequency Hz
 frequency: 500

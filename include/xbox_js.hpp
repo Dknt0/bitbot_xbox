@@ -5,8 +5,8 @@
  * @date 2025.3
  */
 
-#ifndef XPAD_JS_HPP
-#define XPAD_JS_HPP
+#ifndef XBOX_JS_HPP
+#define XBOX_JS_HPP
 
 #include <fcntl.h>
 #include <linux/input.h>
