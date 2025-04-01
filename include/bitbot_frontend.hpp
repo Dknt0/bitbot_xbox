@@ -1,3 +1,10 @@
+/**
+ * @file bitbot_frontend.hpp
+ * @brief
+ * @author Dknt
+ * @date 2025.3
+ */
+
 #ifndef BITBOT_FRONTEND_HPP
 #define BITBOT_FRONTEND_HPP
 
