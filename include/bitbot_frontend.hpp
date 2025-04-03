@@ -24,7 +24,10 @@ namespace xbox_js {
 class JoystickFrontend {
  public:
   JoystickFrontend() = delete;
-  ~JoystickFrontend() { is_connected_.store(false); }
+  ~JoystickFrontend() {
+    is_connected_.store(false);
+    controller_.Stop();
+  }
 
   JoystickFrontend(const std::string& config_path) : controller_(config_path) {
     if (!std::filesystem::exists(config_path)) {
@@ -37,6 +40,7 @@ class JoystickFrontend {
       vel_scale_ = yaml_config["vel_scale"].as<std::vector<double>>();
     }
     is_connected_.store(false);
+    bias_reset_flag_.store(false);
 
     // Setup websocket
     ix::initNetSystem();
@@ -48,7 +52,7 @@ class JoystickFrontend {
     // Emergency shutdown
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
-          if (this->is_connected_.load() && state.AxisValue(AxisName::LT) > 0.9)
+          if (this->is_connected_.load() && state.AxisValue(AxisName::RT) > 0.9)
             return true;
           else
             return false;
@@ -73,7 +77,7 @@ class JoystickFrontend {
         },
         RumbleTemplate::success);
 
-    // Start connection
+    // Stop connection
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
           if (is_connected_.load() && state.AxisValue(AxisName::DPadY) < -0.9)
@@ -83,6 +87,7 @@ class JoystickFrontend {
         },
         [this](const JoystickState& state) {
           is_connected_.store(false);
+          vel_bias_ = {0.0, 0.0, 0.0};
           web_socket_.stop();
         },
         RumbleTemplate::success);
@@ -96,13 +101,13 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
+          // Record data
+          web_socket_.send(ButtonMsg<"enable_record", "1">().value);
+          web_socket_.send(ButtonMsg<"enable_record", "2">().value);
           // Power on
           web_socket_.send(ButtonMsg<"power_on", "1">().value);
           web_socket_.send(ButtonMsg<"power_on", "2">().value);
           std::cout << "Power on" << std::endl;
-          // Record data
-          web_socket_.send(ButtonMsg<"enable_record", "1">().value);
-          web_socket_.send(ButtonMsg<"enable_record", "2">().value);
         },
         RumbleTemplate::success);
 
@@ -139,7 +144,7 @@ class JoystickFrontend {
     // Start inference
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
-          if (this->is_connected_.load() && state.AxisValue(AxisName::RT) > 0.9)
+          if (this->is_connected_.load() && state.AxisValue(AxisName::LT) > 0.9)
             return true;
           else
             return false;
@@ -151,16 +156,68 @@ class JoystickFrontend {
         },
         RumbleTemplate::start_inference);
 
+    // Sin test
+    controller_.RegisterEvent(
+        [this](const JoystickState& state) {
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::X))
+            return true;
+          else
+            return false;
+        },
+        [this](const JoystickState& state) {
+          web_socket_.send(ButtonMsg<"enable_record", "1">().value);
+          web_socket_.send(ButtonMsg<"enable_record", "2">().value);
+          std::cout << "Enable record" << std::endl;
+
+          web_socket_.send(ButtonMsg<"joint_sin_test", "1">().value);
+          web_socket_.send(ButtonMsg<"joint_sin_test", "2">().value);
+          std::cout << "Joint sin test" << std::endl;
+        },
+        RumbleTemplate::success);
+
+    // Set bias
+    controller_.RegisterEvent(
+        [this](const JoystickState& state) {
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::RB))
+            return true;
+          else
+            return false;
+        },
+        [this](const JoystickState& state) {
+          vel_bias_[0] =
+              vel_bias_[0] + vel_scale_[0] * state.AxisValue(AxisName::RY);
+          vel_bias_[1] =
+              vel_bias_[1] - vel_scale_[1] * state.AxisValue(AxisName::RX);
+          vel_bias_[2] =
+              vel_bias_[2] - vel_scale_[2] * state.AxisValue(AxisName::LX);
+
+          std::cout << std::format(
+                           "Reset command bias x: {:2f} y: {:2f} w: {:2f}",
+                           vel_bias_[0], vel_bias_[1], vel_bias_[2])
+                    << std::endl;
+          bias_reset_flag_.store(true);
+        },
+        RumbleTemplate::success);
+
     // Velocity publish
     controller_.RegisterTiming(
         0.01, [this](const xbox_js::JoystickState& state) {
-          if (is_connected_.load()) {
+          if (is_connected_.load() && !bias_reset_flag_.load()) {
             web_socket_.send(VelocityMsg(
-                "set_vel_x", vel_scale_[0] * state.AxisValue(AxisName::RY)));
+                "set_vel_x",
+                vel_bias_[0] + vel_scale_[0] * state.AxisValue(AxisName::RY)));
             web_socket_.send(VelocityMsg(
-                "set_vel_y", vel_scale_[1] * -state.AxisValue(AxisName::RX)));
+                "set_vel_y",
+                vel_bias_[1] + vel_scale_[1] * -state.AxisValue(AxisName::RX)));
             web_socket_.send(VelocityMsg(
-                "set_vel_w", vel_scale_[2] * -state.AxisValue(AxisName::LX)));
+                "set_vel_w",
+                vel_bias_[2] + vel_scale_[2] * -state.AxisValue(AxisName::LX)));
+          } else if (is_connected_.load() &&
+                     std::abs(state.AxisValue(AxisName::RY)) < 0.03 &&
+                     std::abs(state.AxisValue(AxisName::RX)) < 0.03 &&
+                     std::abs(state.AxisValue(AxisName::LX)) < 0.03) {
+            bias_reset_flag_.store(false);
+            std::cout << "Js enabled" << std::endl;
           }
         });
   }
@@ -170,8 +227,6 @@ class JoystickFrontend {
    *
    */
   void Run() {
-    /*web_socket_.start();*/
-    /*web_socket_.stop();*/
     controller_.Run();
 
     while (true) {
@@ -196,6 +251,9 @@ class JoystickFrontend {
   std::string url_ = "ws://localhost:12888/console";
   std::atomic<bool> is_connected_;
   std::vector<double> vel_scale_;
+
+  std::atomic<bool> bias_reset_flag_;
+  std::vector<double> vel_bias_ = {0.0, 0.0, 0.0};
 
   ix::WebSocket web_socket_;
   xbox_js::XBoxController controller_;
