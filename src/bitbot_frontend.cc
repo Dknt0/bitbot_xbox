@@ -2,7 +2,7 @@
 
 int main() {
   xbox_js::JoystickFrontend frontend(
-      "/home/dknt/Project/xpad_dev/config/frontend.yaml");
+      "/home/dknt/Project/bitbot_xbox/config/frontend.yaml");
 
   frontend.Run();
   return 0;

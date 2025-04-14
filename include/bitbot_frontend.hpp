@@ -144,7 +144,7 @@ class JoystickFrontend {
     // Start inference
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
-          if (this->is_connected_.load() && state.AxisValue(AxisName::LT) > 0.9)
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::RS) > 0.9)
             return true;
           else
             return false;
