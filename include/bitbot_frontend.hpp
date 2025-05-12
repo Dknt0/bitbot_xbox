@@ -141,10 +141,24 @@ class JoystickFrontend {
         },
         RumbleTemplate::success);
 
+    controller_.RegisterEvent(
+        [this](const JoystickState& state) {
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::X))
+            return true;
+          else
+            return false;
+        },
+        [this](const JoystickState& state) {
+          web_socket_.send(ButtonMsg<"zero_pose", "1">().value);
+          web_socket_.send(ButtonMsg<"zero_pose", "2">().value);
+          std::cout << "Zero pose" << std::endl;
+        },
+        RumbleTemplate::success);
+
     // Start inference
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
-          if (this->is_connected_.load() && state.ButtonValue(ButtonName::RS) > 0.9)
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::RS))
             return true;
           else
             return false;
@@ -155,25 +169,6 @@ class JoystickFrontend {
           std::cout << "Policy on" << std::endl;
         },
         RumbleTemplate::start_inference);
-
-    // Sin test
-    controller_.RegisterEvent(
-        [this](const JoystickState& state) {
-          if (this->is_connected_.load() && state.ButtonValue(ButtonName::X))
-            return true;
-          else
-            return false;
-        },
-        [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"enable_record", "1">().value);
-          web_socket_.send(ButtonMsg<"enable_record", "2">().value);
-          std::cout << "Enable record" << std::endl;
-
-          web_socket_.send(ButtonMsg<"joint_sin_test", "1">().value);
-          web_socket_.send(ButtonMsg<"joint_sin_test", "2">().value);
-          std::cout << "Joint sin test" << std::endl;
-        },
-        RumbleTemplate::success);
 
     // Set bias
     controller_.RegisterEvent(
