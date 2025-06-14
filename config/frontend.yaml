@@ -1,7 +1,7 @@
 # Joystick Device
 dev_path: /dev/input/js0
 # Rumble HID
-hid_path: /dev/hidraw3
+hid_path: /dev/hidraw2
 # Frequency Hz
 frequency: 500
 
@@ -32,7 +32,7 @@ button_map:
   RS: 14
 
 ## bitbot config
-# url: ws://127.0.0.1:12888/console
-url: ws://192.168.1.118:12888/console
+url: ws://127.0.0.1:12888/console
+# url: ws://192.168.1.118:12888/console
 vel_scale: [1.0, 1.0, 1.0]
 

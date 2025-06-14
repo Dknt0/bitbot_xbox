@@ -141,20 +141,6 @@ class JoystickFrontend {
         },
         RumbleTemplate::success);
 
-    controller_.RegisterEvent(
-        [this](const JoystickState& state) {
-          if (this->is_connected_.load() && state.ButtonValue(ButtonName::X))
-            return true;
-          else
-            return false;
-        },
-        [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"zero_pose", "1">().value);
-          web_socket_.send(ButtonMsg<"zero_pose", "2">().value);
-          std::cout << "Zero pose" << std::endl;
-        },
-        RumbleTemplate::success);
-
     // Start inference
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
@@ -164,13 +150,40 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"policy_run", "1">().value);
-          web_socket_.send(ButtonMsg<"policy_run", "2">().value);
+          web_socket_.send(ButtonMsg<"run_policy", "1">().value);
+          web_socket_.send(ButtonMsg<"run_policy", "2">().value);
           std::cout << "Policy on" << std::endl;
         },
         RumbleTemplate::start_inference);
 
-    // Set bias
+    controller_.RegisterEvent(
+        [this](const JoystickState& state) {
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::X))
+            return true;
+          else
+            return false;
+        },
+        [this](const JoystickState& state) {
+          web_socket_.send(ButtonMsg<"enable_standing_policy", "1">().value);
+          web_socket_.send(ButtonMsg<"enable_standing_policy", "2">().value);
+          std::cout << "enable_standing_policy" << std::endl;
+        },
+        RumbleTemplate::success);
+
+    controller_.RegisterEvent(
+        [this](const JoystickState& state) {
+          if (this->is_connected_.load() && state.ButtonValue(ButtonName::LB))
+            return true;
+          else
+            return false;
+        },
+        [this](const JoystickState& state) {
+          web_socket_.send(ButtonMsg<"enable_warking_policy", "1">().value);
+          web_socket_.send(ButtonMsg<"enable_warking_policy", "2">().value);
+          std::cout << "enable_warking_policy" << std::endl;
+        },
+        RumbleTemplate::success);
+
     controller_.RegisterEvent(
         [this](const JoystickState& state) {
           if (this->is_connected_.load() && state.ButtonValue(ButtonName::RB))
@@ -179,18 +192,9 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          vel_bias_[0] =
-              vel_bias_[0] + vel_scale_[0] * state.AxisValue(AxisName::RY);
-          vel_bias_[1] =
-              vel_bias_[1] - vel_scale_[1] * state.AxisValue(AxisName::RX);
-          vel_bias_[2] =
-              vel_bias_[2] - vel_scale_[2] * state.AxisValue(AxisName::LX);
-
-          std::cout << std::format(
-                           "Reset command bias x: {:2f} y: {:2f} w: {:2f}",
-                           vel_bias_[0], vel_bias_[1], vel_bias_[2])
-                    << std::endl;
-          bias_reset_flag_.store(true);
+          web_socket_.send(ButtonMsg<"enable_robust_policy", "1">().value);
+          web_socket_.send(ButtonMsg<"enable_robust_policy", "2">().value);
+          std::cout << "enable_robust_policy" << std::endl;
         },
         RumbleTemplate::success);
 
