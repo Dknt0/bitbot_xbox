@@ -5,7 +5,7 @@ hid_path: /dev/hidraw5
 # Frequency Hz
 frequency: 500
 
-debug: false
+debug: true
 enable_rumble: true
 
 axis_map:

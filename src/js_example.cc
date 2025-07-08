@@ -1,7 +1,7 @@
 #include "xbox_js.hpp"
 
 int main() {
-  std::string config_path = "/home/dknt/Project/xpad_dev/config/default.yaml";
+  std::string config_path = "/home/dknt/Project/bitbot_xbox/config/default.yaml";
   xbox_js::XBoxController controller(config_path);
 
   // X button
