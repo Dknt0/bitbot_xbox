@@ -103,11 +103,9 @@ class JoystickFrontend {
         },
         [this](const JoystickState& state) {
           // Record data
-          web_socket_.send(ButtonMsg<"enable_record", "1">().value);
           web_socket_.send(ButtonMsg<"enable_record", "2">().value);
           // Power on
           web_socket_.send(ButtonMsg<"power_on", "1">().value);
-          web_socket_.send(ButtonMsg<"power_on", "2">().value);
           std::cout << "Power on" << std::endl;
         },
         RumbleTemplate::success);
@@ -121,7 +119,6 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"start", "1">().value);
           web_socket_.send(ButtonMsg<"start", "2">().value);
           std::cout << "Start state machine" << std::endl;
         },
@@ -136,7 +133,6 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"init_pose", "1">().value);
           web_socket_.send(ButtonMsg<"init_pose", "2">().value);
           std::cout << "Init pose" << std::endl;
         },
@@ -151,7 +147,6 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"run_policy", "1">().value);
           web_socket_.send(ButtonMsg<"run_policy", "2">().value);
           std::cout << "Policy on" << std::endl;
         },
@@ -165,7 +160,6 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"enable_standing_policy", "1">().value);
           web_socket_.send(ButtonMsg<"enable_standing_policy", "2">().value);
           current_cmd_ = standing_cmd_;
           std::cout << "enable_standing_policy" << std::endl;
@@ -180,7 +174,6 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"enable_warking_policy", "1">().value);
           web_socket_.send(ButtonMsg<"enable_warking_policy", "2">().value);
           current_cmd_ = walking_cmd_;
           std::cout << "enable_warking_policy" << std::endl;
@@ -195,7 +188,6 @@ class JoystickFrontend {
             return false;
         },
         [this](const JoystickState& state) {
-          web_socket_.send(ButtonMsg<"enable_robust_policy", "1">().value);
           web_socket_.send(ButtonMsg<"enable_robust_policy", "2">().value);
           current_cmd_ = robust_cmd_;
           std::cout << "enable_robust_policy" << std::endl;

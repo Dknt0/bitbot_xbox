@@ -34,7 +34,8 @@ button_map:
 
 ## bitbot config
 url: ws://127.0.0.1:12888/console
-# url: ws://192.168.1.118:12888/console
+# url: ws://192.168.1.5:12888/console
+# url: ws://192.168.8.88:12888/console
 
 # "Standing", "walking", "robust" are just to differentiate policies
 # The actual policy function is depending on the one you set in bitbot-ovinf
