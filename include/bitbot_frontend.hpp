@@ -33,14 +33,16 @@ class JoystickFrontend {
     if (!std::filesystem::exists(config_path)) {
       std::cout << "Config file not found" << std::endl;
     }
-    // Read config and relsase file
-    {
-      YAML::Node yaml_config = YAML::LoadFile(config_path);
-      url_ = yaml_config["url"].as<std::string>();
-      vel_scale_ = yaml_config["vel_scale"].as<std::vector<double>>();
-    }
+
+    YAML::Node yaml_config = YAML::LoadFile(config_path);
+    url_ = yaml_config["url"].as<std::string>();
+    standing_cmd_ = std::make_shared<TwistCmd>(yaml_config["standing_cmd"]);
+    walking_cmd_ = std::make_shared<TwistCmd>(yaml_config["walking_cmd"]);
+    robust_cmd_ = std::make_shared<TwistCmd>(yaml_config["robust_cmd"]);
+
+    current_cmd_ = standing_cmd_;
+
     is_connected_.store(false);
-    bias_reset_flag_.store(false);
 
     // Setup websocket
     ix::initNetSystem();
@@ -87,7 +89,6 @@ class JoystickFrontend {
         },
         [this](const JoystickState& state) {
           is_connected_.store(false);
-          vel_bias_ = {0.0, 0.0, 0.0};
           web_socket_.stop();
         },
         RumbleTemplate::success);
@@ -166,6 +167,7 @@ class JoystickFrontend {
         [this](const JoystickState& state) {
           web_socket_.send(ButtonMsg<"enable_standing_policy", "1">().value);
           web_socket_.send(ButtonMsg<"enable_standing_policy", "2">().value);
+          current_cmd_ = standing_cmd_;
           std::cout << "enable_standing_policy" << std::endl;
         },
         RumbleTemplate::success);
@@ -180,6 +182,7 @@ class JoystickFrontend {
         [this](const JoystickState& state) {
           web_socket_.send(ButtonMsg<"enable_warking_policy", "1">().value);
           web_socket_.send(ButtonMsg<"enable_warking_policy", "2">().value);
+          current_cmd_ = walking_cmd_;
           std::cout << "enable_warking_policy" << std::endl;
         },
         RumbleTemplate::success);
@@ -194,6 +197,7 @@ class JoystickFrontend {
         [this](const JoystickState& state) {
           web_socket_.send(ButtonMsg<"enable_robust_policy", "1">().value);
           web_socket_.send(ButtonMsg<"enable_robust_policy", "2">().value);
+          current_cmd_ = robust_cmd_;
           std::cout << "enable_robust_policy" << std::endl;
         },
         RumbleTemplate::success);
@@ -201,22 +205,16 @@ class JoystickFrontend {
     // Velocity publish
     controller_.RegisterTiming(
         0.01, [this](const xbox_js::JoystickState& state) {
-          if (is_connected_.load() && !bias_reset_flag_.load()) {
+          if (is_connected_.load()) {
             web_socket_.send(VelocityMsg(
                 "set_vel_x",
-                vel_bias_[0] + vel_scale_[0] * state.AxisValue(AxisName::RY)));
+                current_cmd_->ScaleVelX(state.AxisValue(AxisName::RY))));
             web_socket_.send(VelocityMsg(
                 "set_vel_y",
-                vel_bias_[1] + vel_scale_[1] * -state.AxisValue(AxisName::RX)));
+                current_cmd_->ScaleVelY(-state.AxisValue(AxisName::RX))));
             web_socket_.send(VelocityMsg(
                 "set_vel_w",
-                vel_bias_[2] + vel_scale_[2] * -state.AxisValue(AxisName::LX)));
-          } else if (is_connected_.load() &&
-                     std::abs(state.AxisValue(AxisName::RY)) < 0.03 &&
-                     std::abs(state.AxisValue(AxisName::RX)) < 0.03 &&
-                     std::abs(state.AxisValue(AxisName::LX)) < 0.03) {
-            bias_reset_flag_.store(false);
-            std::cout << "Js enabled" << std::endl;
+                current_cmd_->ScaleVelYaw(-state.AxisValue(AxisName::LX))));
           }
         });
   }
@@ -249,10 +247,10 @@ class JoystickFrontend {
  private:
   std::string url_ = "ws://localhost:12888/console";
   std::atomic<bool> is_connected_;
-  std::vector<double> vel_scale_;
-
-  std::atomic<bool> bias_reset_flag_;
-  std::vector<double> vel_bias_ = {0.0, 0.0, 0.0};
+  std::shared_ptr<TwistCmd> standing_cmd_;
+  std::shared_ptr<TwistCmd> walking_cmd_;
+  std::shared_ptr<TwistCmd> robust_cmd_;
+  std::shared_ptr<TwistCmd> current_cmd_;
 
   ix::WebSocket web_socket_;
   xbox_js::XBoxController controller_;

@@ -239,15 +239,17 @@ class XBoxController {
     }
 
     // Get HID handle
-    hidraw_ = open(hid_path_.c_str(), O_WRONLY);
-    if (hidraw_ < 0) {
-      std::cout << TERMINAL_PREFIX << "Error opening " << hid_path_
-                << ". Changing permission." << std::endl;
-      system((std::string("sudo chmod 666 ") + hid_path_).c_str());
+    if (enable_rumble_) {
       hidraw_ = open(hid_path_.c_str(), O_WRONLY);
-
       if (hidraw_ < 0) {
-        std::cout << TERMINAL_PREFIX << "Error hid path." << std::endl;
+        std::cout << TERMINAL_PREFIX << "Error opening " << hid_path_
+                  << ". Changing permission." << std::endl;
+        system((std::string("sudo chmod 666 ") + hid_path_).c_str());
+        hidraw_ = open(hid_path_.c_str(), O_WRONLY);
+
+        if (hidraw_ < 0) {
+          std::cout << TERMINAL_PREFIX << "Error hid path." << std::endl;
+        }
       }
     }
   }
@@ -446,7 +448,7 @@ class XBoxController {
  private:
   std::string dev_path_ = "";  // Device path
   std::string hid_path_ = "";  // HID path
-  int hidraw_;                 // Human Interface Devices handle
+  int hidraw_ = 0;             // Human Interface Devices handle
   int fd_ = -1;                // File descriptor used by system call
   uint frequency_ = 1000;
   double period_ = 1.0 / frequency_;

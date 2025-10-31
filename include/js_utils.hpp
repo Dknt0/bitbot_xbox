@@ -1,6 +1,8 @@
 #ifndef JS_UTILS_HPP
 #define JS_UTILS_HPP
 
+#include <yaml-cpp/yaml.h>
+
 #include "xbox_js.hpp"
 
 namespace xbox_js {
@@ -66,6 +68,41 @@ inline const std::string VelocityMsg(const std::string& name, double value) {
                     "}]}\",\"type\":\"events\"}";
   return msg;
 }
+
+class TwistCmd {
+ public:
+  TwistCmd(YAML::Node const& config) {
+    x_range_ = config["x"].as<std::vector<double>>();
+    y_range_ = config["y"].as<std::vector<double>>();
+    yaw_range_ = config["yaw"].as<std::vector<double>>();
+  }
+
+  double ScaleVelX(double input) {
+    if (input >= 0)
+      return x_range_[1] * input;
+    else
+      return -x_range_[0] * input;
+  }
+
+  double ScaleVelY(double input) {
+    if (input >= 0)
+      return y_range_[1] * input;
+    else
+      return -y_range_[0] * input;
+  }
+
+  double ScaleVelYaw(double input) {
+    if (input >= 0)
+      return yaw_range_[1] * input;
+    else
+      return -yaw_range_[0] * input;
+  }
+
+ private:
+  std::vector<double> x_range_{-0.6, 1.0};
+  std::vector<double> y_range_{-0.3, 0.3};
+  std::vector<double> yaw_range_{-0.3, 0.3};
+};
 
 }  // namespace xbox_js
 

@@ -17,3 +17,10 @@ cd xpadneo
 sudo ./install.sh
 ```
 
+You may need to change button&axis mappings in `config/frontend.yaml`, depending on the version of driver and firmware.
+
+TODO:
+
+* [ ] Add udev rules for hidraw.
+* [ ] Automatically find rumble device id.
+
