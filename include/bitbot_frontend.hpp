@@ -148,6 +148,7 @@ class JoystickFrontend {
         },
         [this](const JoystickState& state) {
           web_socket_.send(ButtonMsg<"run_policy", "2">().value);
+          current_cmd_ = standing_cmd_;
           std::cout << "Policy on" << std::endl;
         },
         RumbleTemplate::start_inference);
